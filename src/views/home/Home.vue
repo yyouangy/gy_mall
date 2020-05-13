@@ -8,10 +8,10 @@
         <tab-control :titles="['流行','新款','精选']" 
                   class="tab-control"
                   @tabClick="tabClick" />
-        <goods-list :goods="showGoods" class="goods-list" />
+        <goods-list :goods="showGoods"/>
     </scroll>
 
-    <back-top @click.native="backClick"/>
+    <back-top @click.native="backClick" class="back-top"/>
   </div>
 </template>
 
