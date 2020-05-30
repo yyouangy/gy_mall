@@ -1,5 +1,5 @@
 module.exports = {
-    publicPath: '/gy_mall/dist',
+    // publicPath: '/gy_mall/dist/',
     configureWebpack: {
         resolve: {
             extensions: [],

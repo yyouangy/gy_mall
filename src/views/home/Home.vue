@@ -66,7 +66,8 @@ export default {
     isShowbackbtn:false,
     tabOffsetTop:0,
     isTabFixed:false,
-    saveY:0
+    saveY:0,
+    itemImgListener
   }
 },
 created(){
@@ -79,11 +80,13 @@ created(){
 },
 mounted(){
       //1.监听item中图片加载完成
+      // 这个地方img标签确实被挂载，但是其中的图片还没有占据高度
+      //this.$refs.scroll.refresh对这个函数进行防抖操作
       const refresh=debounce(this.$refs.scroll.refresh,200)
 
-      this.$bus.$on('itemImgLoad',()=>{
-        refresh()
-      })
+      //对监听的事件进行保存
+      this.itemImgListener=()=>{refresh()}
+      this.$bus.$on('itemImgLoad',itemImgListener)
 
       //2.获取tabControl的offsetTop
       // setTimeout(()=>{
@@ -101,7 +104,10 @@ activated(){
     this.$refs.scroll.scrollTo(0,this.saveY,0)
 },
 deactivated(){
+  //1.保存Y值
 this.saveY=this.$refs.scroll.getScrollY()
+
+//2.取消全局事件的监听
 },
 methods:{
   /**

@@ -8,6 +8,7 @@
            <detail-goods-info :detail-info="detailInfo" @imageLoad="imageLoad"/>
            <detail-params-info :paramInfo="detailparamsinfo"/>
            <detail-comment-info :commentInfo="detailcommentinfo"/>
+           <goods-list :goods="recommends"/>
         </scroll>
   </div>
 </template>
@@ -23,8 +24,10 @@ import DetailParamsInfo from "./childComps/DetailParamsInfo"
 import DetailCommentInfo from "./childComps/DetailCommentInfo"
 
 import Scroll from "components/common/scroll/Scroll"
+import GoodsList from "components/content/goods/GoodsList"
 
-import {getDetail,Goods,Shop,GoodsParam} from "network/detail.js"
+import {getDetail,Goods,Shop,GoodsParam,getRecommend} from "network/detail.js"
+import {debounce} from 'common/utils.js'
 
 export default {
   name:"Detail",
@@ -36,7 +39,8 @@ export default {
       shop:{},
       detailInfo:{},
       detailparamsinfo:{},
-      detailcommentinfo:{}
+      detailcommentinfo:{},
+      recommends:[]
     }
   },
   components:{
@@ -47,7 +51,8 @@ export default {
     DetailGoodsInfo,
     DetailParamsInfo,
     DetailCommentInfo,
-    Scroll
+    Scroll,
+    GoodsList
   },
   created(){
     //1.保存传入的iid
@@ -57,7 +62,6 @@ export default {
        getDetail(this.iid).then(res=>{
      //1.获取顶部的轮播图数据
         const data=res.result;
-          console.log(data);
       
      //2.获取顶部的图片数据
         this.topImages=res.result.itemInfo.topImages
@@ -79,11 +83,23 @@ export default {
       this.detailcommentinfo=data.rate.list[0]
       }
      }) 
+
+     //3.请求推荐数据
+     getRecommend().then(res=>{
+       this.recommends=res.data.list
+     })
   },
+
       methods:{
         imageLoad(){
             this.$refs.scroll.refresh()
      }
+  },
+  mounted(){
+      const refresh=debounce(this.$refs.scroll.refresh,200)
+      this.$bus.$on('itemImgLoad',()=>{  
+        refresh()
+    })
   }
 }
 
