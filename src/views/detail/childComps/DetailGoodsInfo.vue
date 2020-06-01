@@ -33,9 +33,8 @@
 	    imgLoad() {
 	      // 进行了类似于防抖操作
         // 判断所有图片都加载完了，那么进行一次回调就行了,先自增，再比较
-        if (++this.counter === this.imagesLength) {
-	        this.$emit('imageLoad')
-        }
+        // if (++this.counter === this.imagesLength) {
+	        this.$emit('detailImageLoad') 
 	    }
     },
     watch: {

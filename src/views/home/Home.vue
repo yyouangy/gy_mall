@@ -40,6 +40,7 @@ import BackTop from 'components/content/backTop/BackTop'
 
 import {getHomeGoods,getHomeMultidata} from 'network/home.js'
 import {debounce} from 'common/utils.js'
+import {itemListenerMixin} from "common/mixin.js"
 
 export default {
   name:"Home",
@@ -67,9 +68,9 @@ export default {
     tabOffsetTop:0,
     isTabFixed:false,
     saveY:0,
-    itemImgListener
   }
 },
+mixins:[itemListenerMixin],
 created(){
       //1.请求多个数据
         this.getHomeMultidata()
@@ -78,22 +79,7 @@ created(){
         this.getHomeGoods('new')
         this.getHomeGoods('sell')
 },
-mounted(){
-      //1.监听item中图片加载完成
-      // 这个地方img标签确实被挂载，但是其中的图片还没有占据高度
-      //this.$refs.scroll.refresh对这个函数进行防抖操作
-      const refresh=debounce(this.$refs.scroll.refresh,200)
-
-      //对监听的事件进行保存
-      this.itemImgListener=()=>{refresh()}
-      this.$bus.$on('itemImgLoad',itemImgListener)
-
-      //2.获取tabControl的offsetTop
-      // setTimeout(()=>{
-      //   console.log(this.$refs.tabControl.$el.offsetTop);
-        
-      // },300)
-      
+mounted(){  
 },
 destroyed(){
 console.log('home destroyed');
@@ -108,6 +94,7 @@ deactivated(){
 this.saveY=this.$refs.scroll.getScrollY()
 
 //2.取消全局事件的监听
+this.$bus.$off('itemImgLoad',this.itemImgListener)
 },
 methods:{
   /**

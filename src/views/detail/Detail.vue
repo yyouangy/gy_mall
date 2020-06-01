@@ -1,14 +1,18 @@
 <template>
   <div id="detail">
-     <detail-nav-bar/>
-        <scroll class="detail-scroll" ref="scroll">
+     <detail-nav-bar @titleClick="titleClick" ref="nav"/>
+        <scroll class="detail-scroll" 
+                ref="scroll"
+                :probe-type="3" 
+                @scroll="contentScroll"
+                >
            <detail-swiper :top-images="topImages"/>
            <detail-base-info :goods="goods"/>
            <detail-shop-info :shop="shop"/>
-           <detail-goods-info :detail-info="detailInfo" @imageLoad="imageLoad"/>
-           <detail-params-info :paramInfo="detailparamsinfo"/>
-           <detail-comment-info :commentInfo="detailcommentinfo"/>
-           <goods-list :goods="recommends"/>
+           <detail-goods-info :detail-info="detailInfo" @detailImageLoad="detailImageLoad"/>
+           <detail-params-info ref="params" :paramInfo="detailparamsinfo"/>
+           <detail-comment-info ref="comment" :commentInfo="detailcommentinfo"/>
+           <goods-list ref="recommend":goods="recommends"/>
         </scroll>
   </div>
 </template>
@@ -27,7 +31,8 @@ import Scroll from "components/common/scroll/Scroll"
 import GoodsList from "components/content/goods/GoodsList"
 
 import {getDetail,Goods,Shop,GoodsParam,getRecommend} from "network/detail.js"
-import {debounce} from 'common/utils.js'
+import {debounce} from "common/utils.js"
+import {itemListenerMixin} from "common/mixin.js"
 
 export default {
   name:"Detail",
@@ -40,7 +45,10 @@ export default {
       detailInfo:{},
       detailparamsinfo:{},
       detailcommentinfo:{},
-      recommends:[]
+      recommends:[],
+      themeTopYs:[],
+      getThemeTopY:null,
+      currentIndex:0
     }
   },
   components:{
@@ -54,6 +62,7 @@ export default {
     Scroll,
     GoodsList
   },
+  mixins:[itemListenerMixin],
   created(){
     //1.保存传入的iid
     this.iid=this.$route.params.iid
@@ -82,25 +91,88 @@ export default {
       if(data.rate.cRate!==0){
       this.detailcommentinfo=data.rate.list[0]
       }
+
+      // //1.第一次获取，值不对
+      // //值不对的原因：this.$refs.params.$el压根没有渲染
+      //    this.themeTopYs=[];
+      //   this.themeTopYs.push(0);
+      //   this.themeTopYs.push(this.$refs.params.$el.offsetTop);
+      //   this.themeTopYs.push(this.$refs.comment.$el.offsetTop);
+      //   this.themeTopYs.push(this.$refs.recommend.$el.offsetTop)
+      //       console.log(this.themeTopYs);
+
+      // this.$nextTick(()=>{
+      //   //2.第二次获取：值仍然不对
+      //   //值不对的原因：图片没有计算在内
+      //   //根据最新的数据，对应的DOM是已经被渲染出来
+      //   //但是图片依然是没有加载完（目前获取到的OffsetTop是不包含其中的图片的）
+      //   //offsetTop值不对的时候，都是因为图片未加载完成的问题
+      //   this.themeTopYs=[];
+      //   this.themeTopYs.push(0);
+      //   this.themeTopYs.push(this.$refs.params.$el.offsetTop);
+      //   this.themeTopYs.push(this.$refs.comment.$el.offsetTop);
+      //   this.themeTopYs.push(this.$refs.recommend.$el.offsetTop)
+      //       console.log(this.themeTopYs);
+      // })
      }) 
 
      //3.请求推荐数据
      getRecommend().then(res=>{
        this.recommends=res.data.list
      })
+
+     //4.给getThemeTopY赋值
+     this.getThemeTopY=debounce(()=>{
+        this.themeTopYs=[];
+        this.themeTopYs.push(0);
+        this.themeTopYs.push(this.$refs.params.$el.offsetTop);
+        this.themeTopYs.push(this.$refs.comment.$el.offsetTop);
+        this.themeTopYs.push(this.$refs.recommend.$el.offsetTop)
+            // console.log(this.themeTopYs);
+
+     },100)
   },
 
       methods:{
-        imageLoad(){
-            this.$refs.scroll.refresh()
+        detailImageLoad(){
+            this.refresh()
+            this.getThemeTopY()
+     },
+     titleClick(index){
+       this.$refs.scroll.scrollTo(0,-this.themeTopYs[index],200)
+     },
+     contentScroll(position){
+       //1.获取y值
+       const positionY=-position.y
+
+       //2.positionY和主题中的值进行对比
+      //  [0, 9289, 10058, 10253]
+      //positionY在0到9289之间，index=0
+      //positionY在=9289到10058之间，index=1
+      //positionY在10058到10253之间，index=2
+      //positionY超过或=10253，index=3
+      let length=this.themeTopYs.length
+      for (let i=0;i<length;i++) {
+        if(this.currentIndex!==i&&((i<length-1&&positionY>=this.themeTopYs[i]&&positionY<
+        this.themeTopYs[i+1])||(i===length-1&&positionY>=this.themeTopYs[i]))){
+          this.currentIndex=i;
+          console.log(this.currentIndex);
+          this.$refs.nav.currentIndex=this.currentIndex
+        }   
+      }
      }
   },
-  mounted(){
-      const refresh=debounce(this.$refs.scroll.refresh,200)
-      this.$bus.$on('itemImgLoad',()=>{  
-        refresh()
-    })
-  }
+  mounted(){   
+    
+    
+  },
+  updated() {
+    
+  },
+  destroyed() {
+      this.$bus.$off('itemImgLoad',this.itemImgListener)
+      
+  },
 }
 
 
