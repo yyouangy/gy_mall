@@ -1,7 +1,7 @@
 <template>
   <div id="detail">
      <detail-nav-bar @titleClick="titleClick" ref="nav"/>
-        <scroll class="detail-scroll" 
+        <scroll class="content" 
                 ref="scroll"
                 :probe-type="3" 
                 @scroll="contentScroll"
@@ -14,6 +14,8 @@
            <detail-comment-info ref="comment" :commentInfo="detailcommentinfo"/>
            <goods-list ref="recommend":goods="recommends"/>
         </scroll>
+        <back-top v-show="isShowBackTop" @click.native="backtClick()"/>
+        <detail-bottom-bar @add-cart="addToCart"/>
   </div>
 </template>
 
@@ -26,6 +28,7 @@ import DetailShopInfo from "./childComps/DetailShopInfo"
 import DetailGoodsInfo from "./childComps/DetailGoodsInfo"
 import DetailParamsInfo from "./childComps/DetailParamsInfo"
 import DetailCommentInfo from "./childComps/DetailCommentInfo"
+import DetailBottomBar from "./childComps/DetailBottomBar"
 
 import Scroll from "components/common/scroll/Scroll"
 import GoodsList from "components/content/goods/GoodsList"
@@ -33,6 +36,10 @@ import GoodsList from "components/content/goods/GoodsList"
 import {getDetail,Goods,Shop,GoodsParam,getRecommend} from "network/detail.js"
 import {debounce} from "common/utils.js"
 import {itemListenerMixin} from "common/mixin.js"
+
+import {backTopMixin} from "common/mixin.js"
+
+import {mapActions} from 'vuex'
 
 export default {
   name:"Detail",
@@ -59,10 +66,11 @@ export default {
     DetailGoodsInfo,
     DetailParamsInfo,
     DetailCommentInfo,
+    DetailBottomBar,
     Scroll,
     GoodsList
   },
-  mixins:[itemListenerMixin],
+  mixins:[itemListenerMixin,backTopMixin],
   created(){
     //1.保存传入的iid
     this.iid=this.$route.params.iid
@@ -71,7 +79,6 @@ export default {
        getDetail(this.iid).then(res=>{
      //1.获取顶部的轮播图数据
         const data=res.result;
-      
      //2.获取顶部的图片数据
         this.topImages=res.result.itemInfo.topImages
       
@@ -128,13 +135,15 @@ export default {
         this.themeTopYs.push(this.$refs.params.$el.offsetTop);
         this.themeTopYs.push(this.$refs.comment.$el.offsetTop);
         this.themeTopYs.push(this.$refs.recommend.$el.offsetTop)
-            // console.log(this.themeTopYs);
-
+        this.themeTopYs.push(Number.MAX_VALUE)
      },100)
   },
 
       methods:{
-        detailImageLoad(){
+     ...mapActions({
+        addCart: 'addToCart'
+      }),
+     detailImageLoad(){
             this.refresh()
             this.getThemeTopY()
      },
@@ -152,15 +161,44 @@ export default {
       //positionY在10058到10253之间，index=2
       //positionY超过或=10253，index=3
       let length=this.themeTopYs.length
-      for (let i=0;i<length;i++) {
-        if(this.currentIndex!==i&&((i<length-1&&positionY>=this.themeTopYs[i]&&positionY<
-        this.themeTopYs[i+1])||(i===length-1&&positionY>=this.themeTopYs[i]))){
-          this.currentIndex=i;
-          console.log(this.currentIndex);
-          this.$refs.nav.currentIndex=this.currentIndex
-        }   
+      for (let i=0;i<length-1;i++) {
+
+          if(this.currentIndex!==i&&(positionY>=this.themeTopYs[i]&&positionY<this.themeTopYs[i+1])){
+            this.currentIndex=i;
+            this.$refs.nav.currentIndex=this.currentIndex
+          }
+        // if(this.currentIndex!==i&&((i<length-1&&positionY>=this.themeTopYs[i]&&positionY<
+        // this.themeTopYs[i+1])||(i===length-1&&positionY>=this.themeTopYs[i]))){
+        //   this.currentIndex=i;
+        //   this.$refs.nav.currentIndex=this.currentIndex
       }
-     }
+      //3. back-top按钮
+        this.isShowBackTop = positionY > 800 ? true : false
+     },
+      addToCart() {
+        // 1. 获取商品基本信息
+        const product = {}
+        product.iid = this.iid
+        product.image = this.topImages[0]
+        product.title = this.goods.title
+        product.desc = this.goods.desc
+        product.price = this.goods.lowNowPrice
+        product.checked = true
+        // console.log(this.goods);
+        
+        // console.log(product);
+        
+        // 2. 把数据传入Vuex
+        // this.$store.dispatch('addToCart', product).then(res => {
+        //   console.log(res);
+        // })
+        // 通过mapActions调用actions方法
+        this.addCart(product).then(res => {
+          this.$toast.show(res)
+        })
+      }
+      
+
   },
   mounted(){   
     
@@ -184,12 +222,25 @@ export default {
   background-color: #fff;
   height: 100vh;
 }
-.detail-scroll{
+/* .detail-scroll{
   overflow: hidden;
   position:absolute;
   top: 44px;
   bottom: 0;
   right: 0;
   left: 0;
-}
+} */
+ .content {
+    height: calc(100% - 44px - 49px);
+    overflow: hidden;
+  }
+  /*.detail-nav {
+    position: relative;
+
+    background: #fff;
+  }
+  .back{
+    padding-top: 10px;
+    line-height: 34px;
+  } */
 </style>

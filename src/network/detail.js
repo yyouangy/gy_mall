@@ -1,4 +1,4 @@
-import { request } from 'network/request.js'
+import { request } from './request'
 
 export function getDetail(iid) {
     return request({
@@ -25,7 +25,17 @@ export class Goods {
         this.discount = itemInfo.discountDesc
         this.columns = columns
         this.services = services
-        this.realPrice = itemInfo.lowNowPrice
+        this.lowNowPrice = itemInfo.lowNowPrice
+
+        // this.title = itemInfo.title
+        // this.desc = itemInfo.desc
+        // this.discount = itemInfo.discountDesc
+        // this.discountBgColor = itemInfo.discountBgColor
+        // this.oldPrice = itemInfo.oldPrice
+        // this.newPrice = itemInfo.price
+        // this.lowNowPrice = itemInfo.lowNowPrice
+        // this.columns = columns
+        // this.services = services
     }
 
 }
@@ -35,11 +45,9 @@ export class Shop {
         this.name = shopInfo.name
         this.logo = shopInfo.shopLogo
         this.allGoodsUrl = shopInfo.allGoodsUrl
-
         this.cFans = shopInfo.cFans
         this.goodsCount = shopInfo.cGoods
         this.sells = shopInfo.cSells
-
         this.score = shopInfo.score
     }
 }
