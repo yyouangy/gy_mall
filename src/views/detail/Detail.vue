@@ -186,7 +186,7 @@ export default {
         product.checked = true
         // console.log(this.goods);
         
-        // console.log(product);
+        console.log(product);
         
         // 2. 把数据传入Vuex
         // this.$store.dispatch('addToCart', product).then(res => {
